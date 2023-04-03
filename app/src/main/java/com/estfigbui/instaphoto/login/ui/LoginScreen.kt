@@ -1,7 +1,6 @@
-package com.estfigbui.instaphoto.ui
+package com.estfigbui.instaphoto.login.ui
 
 import android.app.Activity
-import android.util.Patterns
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,6 +13,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,15 +31,26 @@ import androidx.compose.ui.unit.sp
 import com.estfigbui.instaphoto.R
 
 @Composable
-fun MyLoginScreen() {
+fun MyLoginScreen(loginViewModel: LoginViewModel) {
     Box(
         Modifier
             .fillMaxSize()
             .padding(8.dp)
     ) {
-        MyHeader(Modifier.align(Alignment.TopEnd))
-        MyBody(Modifier.align(Alignment.Center))
-        MyFooter(Modifier.align(Alignment.BottomCenter))
+        val isLoading: Boolean by loginViewModel.isLoading.observeAsState(initial = false)
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .align(Alignment.Center)
+            ) {
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
+            }
+        } else {
+            MyHeader(Modifier.align(Alignment.TopEnd))
+            MyBody(Modifier.align(Alignment.Center), loginViewModel)
+            MyFooter(Modifier.align(Alignment.BottomCenter))
+        }
     }
 }
 
@@ -83,27 +94,26 @@ fun MyHeader(modifier: Modifier) {
 }
 
 @Composable
-fun MyBody(modifier: Modifier) {
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
-    var isLoginEnabled by rememberSaveable { mutableStateOf(false) }
+fun MyBody(modifier: Modifier, loginViewModel: LoginViewModel) {
+
+    val email: String by loginViewModel.email.observeAsState(initial = "")
+    val password: String by loginViewModel.password.observeAsState(initial = "")
+    val isLoginEnabled: Boolean by loginViewModel.isLoginEnabled.observeAsState(initial = false)
 
     Column(modifier = modifier) {
         MyImageLogo(Modifier.align(Alignment.CenterHorizontally))
         MySpacer(16)
         MyEmail(email) {
-            email = it
-            isLoginEnabled = enableLoginButton(email, password)
+            loginViewModel.onLoginChanged(it, password)
         }
         MySpacer(4)
         MyPassword(password) {
-            password = it
-            isLoginEnabled = enableLoginButton(email, password)
+            loginViewModel.onLoginChanged(email, it)
         }
         MySpacer(8)
         MyForgotPassword(Modifier.align(Alignment.End))
         MySpacer(16)
-        MyLoginButton(isLoginEnabled)
+        MyLoginButton(isLoginEnabled, loginViewModel)
         MySpacer(16)
         MyLoginDivider()
         MySpacer(32)
@@ -159,9 +169,9 @@ fun MyLoginDivider() {
 }
 
 @Composable
-fun MyLoginButton(loginEnabled: Boolean) {
+fun MyLoginButton(loginEnabled: Boolean, loginViewModel: LoginViewModel) {
     Button(
-        onClick = { },
+        onClick = { loginViewModel.onLoginButtonClicked() },
         enabled = loginEnabled,
         modifier = Modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(
@@ -174,9 +184,6 @@ fun MyLoginButton(loginEnabled: Boolean) {
         Text(text = "Log In")
     }
 }
-
-fun enableLoginButton(email: String, password: String) =
-    Patterns.EMAIL_ADDRESS.matcher(email).matches() && password.length > 6
 
 @Composable
 fun MyForgotPassword(modifier: Modifier) {
@@ -250,11 +257,21 @@ fun MySpacer(size: Int) {
 
 @Composable
 fun MyImageLogo(modifier: Modifier) {
-    Image(
-        painter = painterResource(id = R.drawable.logo),
-        contentDescription = "Logo image",
-        modifier = modifier
-    )
+    Column(modifier = modifier) {
+        Image(
+            painter = painterResource(id = R.drawable.fresa),
+            contentDescription = "Strawberry",
+            modifier = modifier
+                .height(30.dp)
+                .padding(bottom = 8.dp)
+        )
+        Image(
+            painter = painterResource(id = R.drawable.logo),
+            contentDescription = "Logo image",
+            modifier = modifier
+        )
+    }
+
 }
 
 
